@@ -2,6 +2,7 @@ from ultralytics import YOLO
 import cv2
 import cvzone
 import math
+from sort import *
 
 cap = cv2.VideoCapture("../Resources/cars.mp4")
 
@@ -20,9 +21,14 @@ classNames = ["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "trai
               "teddy bear", "hair drier", "toothbrush"
               ]
 
+mask = cv2.imread("../Resources/mask.png") #Import the created mask
+
+
 while True:
     success,img = cap.read()
-    results = model(img,stream = True)
+    mask_rezied = cv2.resize(mask,(img.shape[1],img.shape[0])) #resize the mask to match the img size
+    imgRegion = cv2.bitwise_and(img,mask_rezied) #Region of the image that we will be counting
+    results = model(imgRegion,stream = True) #Give results only from the mask region
 
     for r in results:
         boxes = r.boxes
@@ -45,4 +51,5 @@ while True:
                 cvzone.cornerRect(img, (x1, y1, w, h), l=9, rt= 2, colorR=(255, 0, 255))
 
     cv2.imshow("Image",img)
+    #cv2.imshow("ImageRegion",imgRegion)
     cv2.waitKey(1)
