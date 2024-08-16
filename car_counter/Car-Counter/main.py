@@ -31,6 +31,7 @@ mask = cv2.imread("../Resources/mask.png")  # Import the created mask
 # tracker
 tracker = Sort(max_age=20, min_hits=3, iou_threshold=0.3)
 limits = [400, 297, 673, 297]  # selected points to draw the line on the image
+totalCount = []
 
 while True:
     success, img = cap.read()
@@ -55,7 +56,8 @@ while True:
             cls = int(box.cls[0])
             currentClass = classNames[cls]
 
-            if (currentClass == "motorbike" or currentClass == "car" or currentClass == "bus" or currentClass == "truck") and conf > 0.4:
+            if (
+                    currentClass == "motorbike" or currentClass == "car" or currentClass == "bus" or currentClass == "truck") and conf > 0.4:
                 # cvzone.putTextRect(img,f"{currentClass} {conf}",(max(0,x1),max(35,y1)), scale = 2,thickness = 3, offset = 3)
                 # cvzone.cornerRect(img, (x1, y1, w, h), l=9, rt= 2, colorR=(255, 0, 255))
                 currentArray = np.array([x1, y1, x2, y2, conf])  # store the detections
@@ -65,14 +67,19 @@ while True:
     cv2.line(img, (limits[0], limits[1]), (limits[2], limits[3]), (0, 0, 255), 5)  # draw the line based on the points
 
     for result in resultsTracker:
-        x1, y1, x2, y2, id = result #result consist of coordinates of the cox and id
+        x1, y1, x2, y2, id = result  # result consist of coordinates of the cox and id
         x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
         w, h = x2 - x1, y2 - y1
-        cvzone.cornerRect(img, (x1, y1, w, h), l=9, rt=2, colorR=(255, 0, 0)) #draw the rectangle of the sorted detector
-        cvzone.putTextRect(img, f"{id}", (max(0, x1), max(35, y1)), scale=2, thickness=3, offset=10) #show id number
-        cx, cy = (x1 + x2)/2, (y1 + y2)/2
+        cvzone.cornerRect(img, (x1, y1, w, h), l=9, rt=2,
+                          colorR=(255, 0, 0))  # draw the rectangle of the sorted detector
+        cvzone.putTextRect(img, f"{id}", (max(0, x1), max(35, y1)), scale=2, thickness=3, offset=10)  # show id number
+        cx, cy = (x1 + x2) / 2, (y1 + y2) / 2
         cv2.circle(img, (int(cx), int(cy)), 5, (255, 0, 255), cv2.FILLED)
-        
-        print(result)
+        if limits[0] < int(cx) < limits[2] and limits[1] - 15 < int(cy) < limits[3] + 15:
+            if totalCount.count(id) == 0:
+                totalCount.append(id)
+                cv2.line(img, (limits[0], limits[1]), (limits[2], limits[3]), (0, 255, 0), 5)
+    cvzone.putTextRect(img, f"Count: {len(totalCount)}", (50, 50), scale=3, thickness=5, offset=20)
+
     cv2.imshow("Image", img)
-    cv2.waitKey(0)
+    cv2.waitKey(1)
