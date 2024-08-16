@@ -1,3 +1,4 @@
+import numpy as np
 from ultralytics import YOLO
 import cv2
 import cvzone
@@ -5,6 +6,10 @@ import math
 from sort import *
 
 cap = cv2.VideoCapture("../Resources/cars.mp4")
+
+# cap = cv2.VideoCapture(1)
+# cap.set(3, 1080)
+# cap.set(4, 720)
 
 model = YOLO("../YOLO-Weights/yolov8n.pt")
 
@@ -23,12 +28,15 @@ classNames = ["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "trai
 
 mask = cv2.imread("../Resources/mask.png") #Import the created mask
 
+#tracker
+tracker = Sort(max_age = 20, min_hits = 3, iou_threshold = 0.3)
 
 while True:
     success,img = cap.read()
     mask_rezied = cv2.resize(mask,(img.shape[1],img.shape[0])) #resize the mask to match the img size
     imgRegion = cv2.bitwise_and(img,mask_rezied) #Region of the image that we will be counting
-    results = model(imgRegion,stream = True) #Give results only from the mask region
+    results = model(img,stream = True) #Give results only from the mask region
+    detections = np.empty((0, 5))#empty array to store the detections
 
     for r in results:
         boxes = r.boxes
@@ -46,10 +54,19 @@ while True:
             #class
             cls = int(box.cls[0])
             currentClass = classNames[cls]
-            if (currentClass == "motorbike" or currentClass == "car" or currentClass == "bus" or currentClass == "truck") and conf>0.4:
-                cvzone.putTextRect(img,f"{currentClass} {conf}",(max(0,x1),max(35,y1)), scale = 1,thickness = 2, offset = 3)
-                cvzone.cornerRect(img, (x1, y1, w, h), l=9, rt= 2, colorR=(255, 0, 255))
 
-    cv2.imshow("Image",img)
-    #cv2.imshow("ImageRegion",imgRegion)
-    cv2.waitKey(1)
+
+
+            if (currentClass == "cat" or currentClass == "car" or currentClass == "bus" or currentClass == "truck") and conf>0.4:
+                cvzone.putTextRect(img,f"{currentClass} {conf}",(max(0,x1),max(35,y1)), scale = 2,thickness = 3, offset = 3)
+                cvzone.cornerRect(img, (x1, y1, w, h), l=9, rt= 2, colorR=(255, 0, 255))
+                currentArray = np.array([x1,y1,x2,y2,conf]) #store the detections
+                detections = np.vstack((detections, currentArray)) #stack the detections
+
+    resultsTracker = tracker.update(detections) #Gives the resuts in the format [[x1, y1, x2, y2, ID],...]
+
+    for result in resultsTracker:
+        x1, y1, x2, y2, Id = result
+        print(result)
+    cv2.imshow("ImageRegion",img)
+    cv2.waitKey(0)
