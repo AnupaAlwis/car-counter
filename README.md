@@ -1,4 +1,9 @@
+# Car Counter 
+Car counter is a machine learning model developed for real-time car counting in video sequences. The model utilizes an effective real-time tracking algorithm for 2D multiple object tracking.
+
 # Requirements 
+
+Follow the instructions in the README.md file to set up the environment and deploy it for real-time car counting.
 
 - `cvzone==1.5.6`
 - `ultralytics==8.0.26`
